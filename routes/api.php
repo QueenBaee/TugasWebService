@@ -19,7 +19,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 Route::get('/pesanan',[PesananController::class,'index']);
-Route::get('/pesanan/{id}',[PesananController::class,'findById']);
+Route::get('/pesanan/{kode_pesanan}',[PesananController::class,'findById']);
 Route::post('/pesanan',[PesananController::class,'create']);
-Route::put('/pesanan/{id}',[PesananController::class,'update']);
-Route::delete('/pesanan/{id}',[PesananController::class,'delete']);
+Route::put('/pesanan/{kode_pesanan}',[PesananController::class,'update']);
+Route::delete('/pesanan/{kode_pesanan}',[PesananController::class,'delete']);
