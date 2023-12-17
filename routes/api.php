@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\PesananController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,3 +18,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+Route::get('/pesanan',[PesananController::class,'index']);
+Route::get('/pesanan/{id}',[PesananController::class,'findById']);
+Route::post('/pesanan',[PesananController::class,'create']);
+Route::put('/pesanan/{id}',[PesananController::class,'update']);
+Route::delete('/pesanan/{id}',[PesananController::class,'delete']);
