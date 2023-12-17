@@ -40,6 +40,8 @@ class PesananController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'kode_pesanan'=> 'required|unique:pesanan',
+                'nama_barang'=> 'required',
+                'jumlah_barang'=>'required|numeric',
                 'total_harga'=> 'required|numeric',
                 'metode_pembayaran' => 'required',
                 'tanggal'=> 'required',
@@ -67,21 +69,32 @@ class PesananController extends Controller
             if (!$kode_pesanan) {
                 return response()->json(['status' => false, 'message' => 'Kode Pesanan tidak ditemukan'], Response::HTTP_BAD_REQUEST);
             }
-
+    
             $pesanan = Pesanan::findOrFail($kode_pesanan);
             $validator = Validator::make($request->all(), [
-                'total_harga'=> 'required|numeric',
-                'metode_pembayaran' => 'required',
-                'tanggal'=> 'required',
-                'status'=> 'required',
+                'total_harga' => 'nullable|numeric',
+                'metode_pembayaran' => 'nullable',
+                'nama_barang'=> 'required',
+                'jumlah_barang'=>'required|numeric',
+                'tanggal' => 'nullable',
+                'status' => 'nullable',
             ]);
+    
             if ($validator->fails()) {
                 return response()->json(['status' => false, 'Message' => $validator->errors()], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
-            $pesanan->update($request->all());
+    
+            // Merge request data with existing data, but exclude null values
+            $edit = array_filter($request->all(), function ($value) {
+                return $value !== null;
+            });
+    
+            $pesanan->update($edit);
+    
             $response = [
                 'status' => true, 'message' => 'Data Pesanan Berhasil di Update', 'data' => $pesanan,
             ];
+    
             return response()->json($response, Response::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => 'Data Kosong'], Response::HTTP_NOT_FOUND);
