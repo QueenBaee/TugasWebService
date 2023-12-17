@@ -6,60 +6,98 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Pesanan;
 use Illuminate\Support\Facades\Redis;
-use Illuminate\validation\Validator;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Response;
+//use Illuminate\validation\Validator;
 
 class PesananController extends Controller
 {
     public function index(){
-        $pesanan = Pesanan::all();
-        if ($pesanan ->count() > 0){
-            return response()->json(['status'=>true, 'message' =>'Data Pesanan ditemukan', 'data'=> $pesanan]);
-        }else{
-            return response()->json(['status'=>false, 'message' =>'Data Pesanan kosong']);
+        try {
+            $pesanan = Pesanan::all();
+            return response()->json(['status'=>true, 'message' =>'Data Pesanan Ditemukan', 'data'=> $pesanan], Response::HTTP_OK);
+        } catch (QueryException $e) {
+            $error = [
+                'error' => $e->getMessage()
+            ];
+            return response()->json(['status'=>false, 'message' =>$error], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
     public function findById($kode_pesanan){
-        $pesanan = Pesanan::where('kode_pesanan',$kode_pesanan)->get();
-        if ($pesanan ->count() > 0){
-            return response()->json(['status'=>true, 'message'=> 'Data Pesanan Ditemukan', 'data'=> $pesanan]);
-        }else{
-            return response()->json(['status'=>false, 'message'=> 'Data Kosong']);
+        try {
+            $pesanan = Pesanan::findOrFail($kode_pesanan);
+            $response = [
+                'status' => true, 'message' => 'Data Pesanan Ditemukan', 'data' => $pesanan,
+            ];
+            return response()->json($response, Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => 'Data Kosong'], Response::HTTP_NOT_FOUND);
         }
     }
-    public function create (Request $request){
-        $validator = $request->validate(['kode_pesanan'=>'required',
-        'total_harga'=> 'required',
-        'metode_pembayaran' => 'required',
-        'tanggal'=> 'required',
-        'status'=> 'required',]);
-        
-        $pesanan = Pesanan::create($validator);
-            return response()->json(['status' => 201, 'message' => 'Data pesanan berhasil ditambahkan', 'data' => $pesanan]);
-        
-    }
-    public function update(Request $request, Pesanan $pesanan){
-        if(!$pesanan){
-            return response()->json(['status'=>false, 'message'=> 'data pesanan tidak ditemukan']);
-        }
-        $kode_pesanan = $request->input('kode_pesanan');
-        $total_harga = $request->input('total_harga');
-        $tanggal = $request ->input('tanggal');
-        $status = $request->input('status');
-        
-       $pesanan -> update(['kode_pesanan'=>'required',
-        'total_harga'=> 'required',
-        'metode_pembayaran' => 'required',
-        'tanggal'=> 'required',
-        'status'=> 'required',]);
 
-        return response()->json(['status' => 200, 'message' => 'Data pesanan berhasil di update', 'data' => $pesanan]);
-}
-    public function delete($kode_pesanan){
-        $pesanan = Pesanan::where('kode_pesanan',$kode_pesanan)->first();
-        if(!$pesanan){
-            return response()->json(['status'=>false, 'message'=> 'Data Pesanan Tidak Ditemukan']);
+    public function create (Request $request){
+        try {
+            $validator = Validator::make($request->all(), [
+                'kode_pesanan'=> 'required|unique:pesanan',
+                'total_harga'=> 'required|numeric',
+                'metode_pembayaran' => 'required',
+                'tanggal'=> 'required',
+                'status'=> 'required',
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['Status' => false, 'Message' => $validator->errors()], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $pesanan = Pesanan::create($request->all());
+            $response = [
+                'status' => true, 'message' => 'Data Pesanan Berhasil Ditambahkan', 'data' => $pesanan,
+            ];
+            return response()->json($response, Response::HTTP_CREATED);
+        } catch (QueryException $e) {
+            $error = [
+                'error' => $e->getMessage()
+            ];
+            return response()->json($error, Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        $pesanan->delete();
-        return response()->json(['status' => 204, 'message' => 'Data pesanan berhasil di Hapus', 'data' => $pesanan]);
+    }
+
+    public function update(Request $request, $kode_pesanan)
+    {
+        try {
+            if (!$kode_pesanan) {
+                return response()->json(['status' => false, 'message' => 'Kode Pesanan tidak ditemukan'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $pesanan = Pesanan::findOrFail($kode_pesanan);
+            $validator = Validator::make($request->all(), [
+                'total_harga'=> 'required|numeric',
+                'metode_pembayaran' => 'required',
+                'tanggal'=> 'required',
+                'status'=> 'required',
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['status' => false, 'Message' => $validator->errors()], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $pesanan->update($request->all());
+            $response = [
+                'status' => true, 'message' => 'Data Pesanan Berhasil di Update', 'data' => $pesanan,
+            ];
+            return response()->json($response, Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => 'Data Kosong'], Response::HTTP_NOT_FOUND);
+        }
+    }
+       
+    public function delete($kode_pesanan){
+        try {
+            if (!$kode_pesanan) {
+                return response()->json(['status' => false, 'message' => 'Kode Pesanan tidak ditemukan'], Response::HTTP_BAD_REQUEST);
+            }
+            
+            Pesanan::findOrFail($kode_pesanan)->delete();
+            return response()->json(['status'=>true, 'message' => 'Data Pesanan Berhasil Dihapus']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => 'Data Pesanan Tidak Ditemukan'], Response::HTTP_NOT_FOUND);
+        }
     }
 }
