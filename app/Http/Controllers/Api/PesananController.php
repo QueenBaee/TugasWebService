@@ -41,9 +41,9 @@ class PesananController extends Controller
             $validator = Validator::make($request->all(), [
                 'kode_pesanan'=> 'required|unique:pesanan',
                 'total_harga'=> 'required|numeric',
-                'metode_pembayaran' => 'required',
-                'tanggal'=> 'required',
-                'status'=> 'required',
+                'metode_pembayaran' => 'required|string',
+                'tanggal'=> 'required|string',
+                'status'=> 'required|string',
             ]);
             if ($validator->fails()) {
                 return response()->json(['Status' => false, 'Message' => $validator->errors()], Response::HTTP_UNPROCESSABLE_ENTITY);
